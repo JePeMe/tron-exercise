@@ -7,6 +7,8 @@ http.createServer(function() {
     console.log('listening on 1338');
 });
 
+var MAX_SCORE = 10;
+
 var wss = new ws.Server({port: 1337});
 var games = {};
 
@@ -37,7 +39,7 @@ wss.on('connection', function(client) {
             return;
         }
         games[message.id] = {
-            players: [client]
+            connections: [client]
         };
         console.log(games);
         broadCastGamesList();
@@ -45,7 +47,7 @@ wss.on('connection', function(client) {
 
     function joinGame(message){
         if(games.hasOwnProperty(message.id)){
-            games[message.id].players.push(client);
+            games[message.id].connections.push(client);
             startGame(games[message.id]);
         }
     }
@@ -55,7 +57,7 @@ wss.on('connection', function(client) {
         var gameIds = Object.keys(games);
         for (var i = 0; i < gameIds.length; i++) {
             var game = games[gameIds[i]];
-            if (game.players.indexOf(client) > -1) {
+            if (game.connections.indexOf(client) > -1) {
                 removeGame(gameIds[i], client);
             }
         }
@@ -66,12 +68,12 @@ wss.on('connection', function(client) {
 function removeGame(gameId, client) {
     console.log('Remove game');
     var game = games[gameId];
-    game.loser = game.players.indexOf(client);
-    game.players.splice(game.loser, 1);
-    game.players.forEach(function(connection) {
+    game.winner = game.connections.indexOf(client);
+    game.connections.splice(game.winner, 1);
+    game.connections.forEach(function(connection) {
         connection.send(JSON.stringify({
             type: 'gameover',
-            loser: game.loser
+            winner: game.winner
         }))
     });
     delete games[gameId];
@@ -88,38 +90,41 @@ function broadCastGamesList(){
 }
 
 function startGame(game) {
-    var clients = game.players;
-    var area = initArea();
+    var clients = game.connections;
+    var area = [];
     var players = [];
     var gameTimer;
+
     start();
 
     function initArea() {
-        var area = [];
+        area = [];
         for (var i = 0; i < 50; i++) {
             area[i] = [];
             for (var j = 0; j < 50; j++) {
                 area[i][j] = -1;
             }
         }
-        return area;
     }
 
     function start() {
+        initArea();
         players = clients.map(function(client, index) {
             if (index === 0) {
                 area[2][24] = index;
                 return {
                     id: index,
                     position: {x: 2, y: 24},
-                    dir: {x: 1, y: 0}
+                    dir: {x: 1, y: 0},
+                    score: 0
                 };
             }
             area[47][24] = index;
             return {
                 id: index,
                 position: {x: 47, y: 24},
-                dir: {x: -1, y: 0}
+                dir: {x: -1, y: 0},
+                score: 0
             };
         });
         gameTimer = setInterval(tick, 500);
@@ -135,7 +140,7 @@ function startGame(game) {
         clients.forEach(function(connection) {
             connection.send(JSON.stringify({
                 type: 'tick',
-                state: area
+                state: { players: players, area: area }
             }));
         });
     }
@@ -143,8 +148,14 @@ function startGame(game) {
     function movePlayer(player, index) {
         player.position.x = applyDirection(player.position.x, player.dir.x, area.length);
         player.position.y= applyDirection(player.position.y, player.dir.y, area.length);
-        if (area[player.position.x][player.position.y] >= 0) {
-            return gameOver(player.id);
+        var otherPlayerId = area[player.position.x][player.position.y];
+
+        if (otherPlayerId >= 0) {
+            var score = players[otherPlayerId].score++;
+            if(score >= MAX_SCORE){
+                gameOver(otherPlayerId);
+            }
+            initArea();
         }
         area[player.position.x][player.position.y] = index;
     }
@@ -158,7 +169,7 @@ function startGame(game) {
         clients.forEach(function(connection) {
             connection.send(JSON.stringify({
                 type: 'gameover',
-                loser: playerId 
+                winner: playerId
             }));
         });
     }

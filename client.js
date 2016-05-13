@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 });
 
-function initLobby(connection, loser) {
+function initLobby(connection, winner) {
     var lobby = $('#lobby');
     lobby.show();
 
@@ -89,7 +89,16 @@ function initGame(connection) {
 
     function updateLog(msg) {
         log.empty();
-        log.append($('<span>' + JSON.stringify(msg.state) + '</span>'));
+        log.append($('<span>' + JSON.stringify(msg.state.area) + '</span>'));
+        updateStatistics(msg.state);
+    }
+
+    function updateStatistics(state){
+        var text = state.players.reduce(function(acc, player){
+            return acc + 'player' + player.id + ': ' + player.score + '/ ';
+        }, '');
+
+        $('#statistics').text(text);
     }
 
     function keyListener(event) {
@@ -102,6 +111,6 @@ function initGame(connection) {
 
     function gameOver(msg) {
         game.hide();
-        initLobby(connection, msg.loser);
+        initLobby(connection, msg.winner);
     }
 }
