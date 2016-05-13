@@ -11,43 +11,76 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initLobby(connection) {
-    document.getElementById('createButton')
-        .addEventListener('click', function() {
-            connection.send(JSON.stringify({
-                id: 'thebestgameofalltimesever',
-                type: 'create'
-            }));
-        });
+    var lobby = $('#lobby');
+
+    $('#createButton').on('click', function() {
+        connection.send(JSON.stringify({
+            id: 'thebestgameofalltimesever',
+            type: 'create'
+        }));
+        showGame();
+    });
 
     connection.onmessage = function(event) {
+        console.log(event.data);
         var message = JSON.parse(event.data);
-        console.log(message);
 
         if(message.type === 'lobbyPool'){
-            updateLobbyDisplay(message.content, connection);
+            updateGamesList(message.content);
         }
     };
-}
 
-function updateLobbyDisplay(games, connection){
+    function updateGamesList(games){
 
-    var gamesList = $('#gamesList');
-    gamesList.empty();
+        var gamesList = $('#gamesList');
+        gamesList.empty();
 
-    games.forEach(function(id){
+        games.forEach(function(id){
 
-        var gameButton = $('<li id="'+id+'" class="btn">join game: '+id+'</li>');
-        gameButton.on('click', function(){
-            joinGame(id, connection);
+            var gameButton = $('<li id="'+id+'" class="btn">join game: '+id+'</li>');
+            gameButton.on('click', function(){
+                joinGame(id);
+            });
+
+            gamesList.append(gameButton);
         });
+    }
 
-        gamesList.append(gameButton);
-    });
+    function joinGame(id){
+        connection.send(JSON.stringify({
+            id: id,
+            type: 'join'
+        }));
+        showGame();
+    }
+
+    function showGame() {
+        lobby.hide();
+        initGame(connection);
+    }
 }
 
-function joinGame(id, connection){
-    connection.send(JSON.stringify({
-        id: id,
-        type: 'join'
-    }));
+function initGame(connection) {
+    var game = $('#game');
+    game.show();
+
+    var log = $('#log');
+
+    connection.onmessage = updateLog;
+
+    $(document).on('keyDown', keyListener);
+
+    function updateLog(event) {
+        console.log(event.data);
+        var message = JSON.parse(event.data);
+        log.append($('<span>' + event.data + '</span>'));
+    }
+
+    function keyListener(event) {
+        log.append($('<span>Key pressed: ' + event.keyCode + '</span>'));
+        connection.send(JSON.stringify({
+            type: 'control',
+            value: event.keyCode
+        }));
+    }
 }

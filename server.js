@@ -8,23 +8,40 @@ http.createServer(function() {
 });
 
 var wss = new ws.Server({port: 1337});
+var games = {};
+
 wss.on('connection', function(client) {
+    var router = {
+        'create': createGame,
+        'join': joinGame
+    };
+
     client.on('message', function(message) {
         console.log(message);
         message = JSON.parse(message);
-        if (message.type === 'create') {
-            games[message.id] = {
-                players: [client]
-            };
-            console.log(games);
-            broadCastGamesList();
-        } else if (message.type === 'join'){
-            if(games.hasOwnProperty(message.id)){
-               games[message.id].players.push(client);
-            }
+
+        if (router.hasOwnProperty(message.type)) {
+            var doStuff = router[message.type];
+            doStuff(message);
         }
     });
     sendGamesList(client);
+
+    function createGame(message){
+        games[message.id] = {
+            players: [client]
+        };
+        console.log(games);
+        broadCastGamesList();
+    }
+
+    function joinGame(message){
+        if(games.hasOwnProperty(message.id)){
+            games[message.id].players.push(client);
+            startGame(games[message.id]);
+            delete games[message.id];
+        }
+    }
 });
 
 function sendGamesList(client){
@@ -37,4 +54,64 @@ function broadCastGamesList(){
     });
 }
 
-var games = {};
+function startGame(game) {
+    var clients = game.players;
+    var area = initArea();
+    var players = [];
+    var gameTimer;
+    start();
+
+    function initArea() {
+        var area = [];
+        for (var i = 0; i < 50; i++) {
+            area[i] = [];
+            for (var j = 0; j < 50; j++) {
+                area[i][j] = -1;
+            }
+        }
+        return area;
+    };
+
+    function start() {
+        players = clients.map(function(client, index) {
+            if (index == 0) {
+                area[2][24] = index;
+                return {
+                    position: {x: 2, y: 24},
+                    dir: {x: 1, y: 0}
+                };
+            }
+            area[47][24] = index;
+            return {
+                position: {x: 47, y: 24},
+                dir: {x: -1, y: 0}
+            };
+        });
+        gameTimer = setInterval(tick, 500);
+        clients.forEach(function(connection) {
+            connection.send(JSON.stringify(
+                {type: 'start'}
+            ));
+        });
+    }
+
+    function tick() {
+        players.forEach(movePlayer);
+        clients.forEach(function(connection) {
+            connection.send(JSON.stringify({
+                type: 'tick',
+                state: area
+            }));
+        });
+    }
+
+    function movePlayer(player, index) {
+        player.position.x = applyDirection(player.position.x, player.dir.x, area.length);
+        player.position.y= applyDirection(player.position.y, player.dir.y, area.length);
+        area[player.position.x][player.position.y] = index;
+    }
+
+    function applyDirection(pos, dir, max) {
+        return (pos + dir + max) % max;
+    }
+}
