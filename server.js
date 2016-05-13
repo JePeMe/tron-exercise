@@ -70,19 +70,21 @@ function startGame(game) {
             }
         }
         return area;
-    };
+    }
 
     function start() {
         players = clients.map(function(client, index) {
-            if (index == 0) {
+            if (index === 0) {
                 area[2][24] = index;
                 return {
+                    id: index,
                     position: {x: 2, y: 24},
                     dir: {x: 1, y: 0}
                 };
             }
             area[47][24] = index;
             return {
+                id: index,
                 position: {x: 47, y: 24},
                 dir: {x: -1, y: 0}
             };
@@ -108,10 +110,23 @@ function startGame(game) {
     function movePlayer(player, index) {
         player.position.x = applyDirection(player.position.x, player.dir.x, area.length);
         player.position.y= applyDirection(player.position.y, player.dir.y, area.length);
+        if (area[player.position.x][player.position.y] >= 0) {
+            return gameOver(player.id);
+        }
         area[player.position.x][player.position.y] = index;
     }
 
     function applyDirection(pos, dir, max) {
         return (pos + dir + max) % max;
+    }
+
+    function gameOver(playerId) {
+        clearInterval(gameTimer);
+        clients.forEach(function(connection) {
+            connection.send(JSON.stringify({
+                type: 'gameover',
+                loser: playerId 
+            }));
+        });
     }
 }

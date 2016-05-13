@@ -10,8 +10,9 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 });
 
-function initLobby(connection) {
+function initLobby(connection, loser) {
     var lobby = $('#lobby');
+    lobby.show();
 
     $('#createButton').on('click', function() {
         connection.send(JSON.stringify({
@@ -20,6 +21,8 @@ function initLobby(connection) {
         }));
         showGame();
     });
+    
+    //TODO show info about who lost last game
 
     connection.onmessage = function(event) {
         console.log(event.data);
@@ -66,14 +69,27 @@ function initGame(connection) {
 
     var log = $('#log');
 
-    connection.onmessage = updateLog;
+    var router = {
+        gameover: gameOver,
+        tick: updateLog,
+        lobbyUpdate: function(){},
+        lobbyPool: function(){},
+        start: function(){},
+    };
+
+    connection.onmessage = function(msg) {
+        msg = JSON.parse(msg.data);
+        if (router.hasOwnProperty(msg.type)) {
+            router[msg.type](msg);
+        }
+    };
 
     $(document).on('keyDown', keyListener);
 
-    function updateLog(event) {
-        console.log(event.data);
-        var message = JSON.parse(event.data);
-        log.append($('<span>' + event.data + '</span>'));
+
+    function updateLog(msg) {
+        log.empty();
+        log.append($('<span>' + JSON.stringify(msg.state) + '</span>'));
     }
 
     function keyListener(event) {
@@ -82,5 +98,10 @@ function initGame(connection) {
             type: 'control',
             value: event.keyCode
         }));
+    }
+
+    function gameOver(msg) {
+        game.hide();
+        initLobby(connection, msg.loser);
     }
 }
