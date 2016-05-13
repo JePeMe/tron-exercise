@@ -25,9 +25,17 @@ wss.on('connection', function(client) {
             doStuff(message);
         }
     });
+    client.on('close', handleDisconnect);
     sendGamesList(client);
 
     function createGame(message){
+        if (games[message.id]) {
+            client.send(JSON.stringify({
+                type: 'error',
+                content: 'lobby exists'
+            }));
+            return;
+        }
         games[message.id] = {
             players: [client]
         };
@@ -39,10 +47,35 @@ wss.on('connection', function(client) {
         if(games.hasOwnProperty(message.id)){
             games[message.id].players.push(client);
             startGame(games[message.id]);
-            delete games[message.id];
         }
     }
+
+    function handleDisconnect() {
+        console.log('Handle disconnect');
+        var gameIds = Object.keys(games);
+        for (var i = 0; i < gameIds.length; i++) {
+            var game = games[gameIds[i]];
+            if (game.players.indexOf(client) > -1) {
+                removeGame(gameIds[i], client);
+            }
+        }
+        broadCastGamesList();
+    }
 });
+
+function removeGame(gameId, client) {
+    console.log('Remove game');
+    var game = games[gameId];
+    game.loser = game.players.indexOf(client);
+    game.players.splice(game.loser, 1);
+    game.players.forEach(function(connection) {
+        connection.send(JSON.stringify({
+            type: 'gameover',
+            loser: game.loser
+        }))
+    });
+    delete games[gameId];
+}
 
 function sendGamesList(client){
     client.send(JSON.stringify({type: 'lobbyPool', content: Object.keys(games)}));
