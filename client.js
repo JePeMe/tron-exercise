@@ -87,9 +87,34 @@ function initGame(connection) {
     $(document).on('keyDown', keyListener);
 
 
+    var playerColors = {
+        0: 'red',
+        1: 'green',
+        2: 'blue'
+    };
+    var playingField = $('#playingField');
+    var ctx = playingField[0].getContext('2d');
+
     function updateLog(msg) {
+        var area = msg.state.area;
+        //TODO refactor
+        var rectangleWidth = playingField.width()/area[0].length;
+        var rectangleHeight = playingField.height()/area.length;
+        //updateLog
         log.empty();
-        log.append($('<span>' + JSON.stringify(msg.state.area) + '</span>'));
+        log.append($('<span>' + JSON.stringify(area) + '</span>'));
+
+        //update visual 
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, playingField.width(), playingField.height());
+        area.forEach(function(row, x) {
+            row.forEach(function(playerId, y) {
+                if (playerId > -1) {
+                    ctx.fillStyle = playerColors[playerId];
+                    ctx.fillRect(x*rectangleWidth, y*rectangleHeight, rectangleWidth, rectangleHeight);
+                }
+            });
+        });
         updateStatistics(msg.state);
     }
 
