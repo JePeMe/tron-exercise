@@ -17,10 +17,24 @@ wss.on('connection', function(client) {
                 players: [client]
             };
             console.log(games);
+            broadCastGamesList();
+        } else if (message.type === 'join'){
+            if(games.hasOwnProperty(message.id)){
+               games[message.id].players.push(client);
+            }
         }
-        //if (message.type === 'join')
     });
-    client.send(JSON.stringify({type: 'lobbyPool', content: games}));
+    sendGamesList(client);
 });
+
+function sendGamesList(client){
+    client.send(JSON.stringify({type: 'lobbyPool', content: Object.keys(games)}));
+}
+
+function broadCastGamesList(){
+    wss.clients.forEach(function each(client) {
+        sendGamesList(client);
+    });
+}
 
 var games = {};
