@@ -15,7 +15,8 @@ var games = {};
 wss.on('connection', function(client) {
     var router = {
         'create': createGame,
-        'join': joinGame
+        'join': joinGame,
+        'ready': startGameIfReady
     };
 
     client.on('message', function(message) {
@@ -24,31 +25,32 @@ wss.on('connection', function(client) {
 
         if (router.hasOwnProperty(message.type)) {
             var doStuff = router[message.type];
-            doStuff(message);
+            doStuff(message.id);
         }
     });
     client.on('close', handleDisconnect);
     sendGamesList(client);
 
-    function createGame(message){
-        if (games[message.id]) {
+    function createGame(id){
+        if (games[id]) {
             client.send(JSON.stringify({
                 type: 'error',
                 content: 'lobby exists'
             }));
             return;
         }
-        games[message.id] = {
-            connections: [client]
+        games[id] = {
+            connections: [client],
+            players: [],
         };
         console.log(games);
         broadCastGamesList();
     }
 
-    function joinGame(message){
-        if(games.hasOwnProperty(message.id)){
-            games[message.id].connections.push(client);
-            startGame(games[message.id]);
+    function joinGame(id){
+        if(games.hasOwnProperty(id)){
+            games[id].connections.push(client);
+            updatePlayers(id);
         }
     }
 
@@ -74,7 +76,7 @@ function removeGame(gameId, client) {
         connection.send(JSON.stringify({
             type: 'gameover',
             winner: game.winner
-        }))
+        }));
     });
     delete games[gameId];
 }
@@ -87,6 +89,34 @@ function broadCastGamesList(){
     wss.clients.forEach(function each(client) {
         sendGamesList(client);
     });
+}
+
+function updatePlayers(gameId) {
+    games[gameId].players = games[gameId].connections.map(function(client, index) {
+        if (index === 0) {
+            return {
+                id: index,
+                position: {x: 2, y: 24},
+                dir: {x: 1, y: 0},
+                score: 0
+            };
+        }
+        return {
+            id: index,
+            position: {x: 47, y: 24},
+            dir: {x: -1, y: 0},
+            score: 0
+        };
+    });
+}
+
+function startGameIfReady(gameId) {
+    var allPlayersAreReady = !games[gameId].players.some(function(player) {
+        return !player.ready;
+    });
+    if (allPlayersAreReady) {
+        startGame(games[gameId]);
+    }
 }
 
 function startGame(game) {
@@ -128,24 +158,6 @@ function startGame(game) {
 
     function start() {
         initArea();
-        players = clients.map(function(client, index) {
-            if (index === 0) {
-                area[2][24] = index;
-                return {
-                    id: index,
-                    position: {x: 2, y: 24},
-                    dir: {x: 1, y: 0},
-                    score: 0
-                };
-            }
-            area[47][24] = index;
-            return {
-                id: index,
-                position: {x: 47, y: 24},
-                dir: {x: -1, y: 0},
-                score: 0
-            };
-        });
 
         clients.forEach(function(client, index) {
             var controlListener = client.on('message', function(message) {
