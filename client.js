@@ -21,7 +21,14 @@ function initLobby(connection, winner) {
         }));
         showGame();
     });
-    
+
+    $('#button-ready').on('click', function() {
+        connection.send(JSON.stringify({
+            id: 'thebestgameofalltimesever',
+            type: 'ready'
+        }));
+    });
+
     //TODO show info about who lost last game
 
     connection.onmessage = function(event) {
@@ -73,7 +80,7 @@ function initGame(connection) {
 
     var router = {
         gameover: gameOver,
-        tick: updateLog,
+        tick: updateGame,
         lobbyUpdate: function(){},
         lobbyPool: function(){},
         start: function(){},
@@ -91,21 +98,22 @@ function initGame(connection) {
     var playerColors = {
         0: 'red',
         1: 'green',
-        2: 'blue'
+        2: 'blue',
+        3: 'black'
     };
     var playingField = $('#playingField');
     var ctx = playingField[0].getContext('2d');
 
-    function updateLog(msg) {
+    function updateGame(msg) {
         var area = msg.state.area;
         //TODO refactor
         var rectangleWidth = playingField.width()/area[0].length;
         var rectangleHeight = playingField.height()/area.length;
         //updateLog
         log.empty();
-        log.append($('<span>' + JSON.stringify(area) + '</span>'));
+        //log.append($('<span>' + JSON.stringify(area) + '</span>'));
 
-        //update visual 
+        //update visual
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, playingField.width(), playingField.height());
         area.forEach(function(row, x) {
@@ -180,7 +188,7 @@ function initGame(connection) {
 
     function move(direction) {
         connection.send(JSON.stringify({
-            'type': 'CONTROL',
+            'type': 'control',
             'direction': direction
         }));
     }

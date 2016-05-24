@@ -25,7 +25,7 @@ wss.on('connection', function(client) {
 
         if (router.hasOwnProperty(message.type)) {
             var doStuff = router[message.type];
-            doStuff(message.id);
+            doStuff(message.id, client);
         }
     });
     client.on('close', handleDisconnect);
@@ -40,9 +40,10 @@ wss.on('connection', function(client) {
             return;
         }
         games[id] = {
-            connections: [client],
+            connections: [],
             players: [],
         };
+        joinGame(id);
         console.log(games);
         broadCastGamesList();
     }
@@ -50,7 +51,17 @@ wss.on('connection', function(client) {
     function joinGame(id){
         if(games.hasOwnProperty(id)){
             games[id].connections.push(client);
-            updatePlayers(id);
+            var playerId = updatePlayers(id);
+
+            client.on('message', function(message) {
+                console.log(message);
+                message = JSON.parse(message);
+
+                if (message.type === 'ready') {
+                    games[id].players[playerId].ready = true;
+                    startGameIfReady(id);
+                }
+            });
         }
     }
 
@@ -98,22 +109,45 @@ function updatePlayers(gameId) {
                 id: index,
                 position: {x: 2, y: 24},
                 dir: {x: 1, y: 0},
-                score: 0
+                score: 0,
+                ready: false
+            };
+        }
+        if (index === 1) {
+            return {
+                id: index,
+                position: {x: 24, y: 2},
+                dir: {x: 0, y: 1},
+                score: 0,
+                ready: false
+            };
+        }
+        if (index === 2) {
+            return {
+                id: index,
+                position: {x: 24, y: 47},
+                dir: {x: 0, y: -1},
+                score: 0,
+                ready: false
             };
         }
         return {
             id: index,
             position: {x: 47, y: 24},
             dir: {x: -1, y: 0},
-            score: 0
+            score: 0,
+            ready: false
         };
     });
+    return games[gameId].players.length-1;
 }
 
 function startGameIfReady(gameId) {
-    var allPlayersAreReady = !games[gameId].players.some(function(player) {
-        return !player.ready;
+
+    var allPlayersAreReady = games[gameId].players.every(function(player) {
+        return player.ready;
     });
+    console.log(games[gameId].players);
     if (allPlayersAreReady) {
         startGame(games[gameId]);
     }
@@ -123,7 +157,7 @@ function startGame(game) {
     var clients = game.connections;
     var listeners = [];
     var area = [];
-    var players = [];
+    var players = game.players;
     var gameTimer;
     var directions = {
         "UP": {
@@ -164,7 +198,7 @@ function startGame(game) {
                 console.log(message);
                 message = JSON.parse(message);
 
-                if (message.type === 'CONTROL') {
+                if (message.type === 'control') {
                     players[index].dir = directions[message.direction];
                 }
             });
