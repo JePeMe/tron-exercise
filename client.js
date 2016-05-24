@@ -69,6 +69,8 @@ function initGame(connection) {
 
     var log = $('#log');
 
+    var keyMap = initKeyMap();
+
     var router = {
         gameover: gameOver,
         tick: updateLog,
@@ -84,8 +86,7 @@ function initGame(connection) {
         }
     };
 
-    $(document).on('keyDown', keyListener);
-
+    $(document).keydown(keyListener);
 
     var playerColors = {
         0: 'red',
@@ -127,15 +128,60 @@ function initGame(connection) {
     }
 
     function keyListener(event) {
-        log.append($('<span>Key pressed: ' + event.keyCode + '</span>'));
-        connection.send(JSON.stringify({
-            type: 'control',
-            value: event.keyCode
-        }));
+        log.prepend($('<span>Key pressed: ' + event.keyCode + '</span>'));
+        var doStuff = keyMap[event.keyCode];
+        if (doStuff !== undefined) {
+            doStuff();
+        }
     }
 
     function gameOver(msg) {
         game.hide();
         initLobby(connection, msg.winner);
+    }
+
+    function initKeyMap() {
+        var keyMap = {};
+        // move down:
+        //      arrow down
+        //      key: s
+        keyMap["40"] = moveDown;
+        keyMap["83"] = moveDown;
+        // move up:
+        //      arrow up
+        //      key: w
+        keyMap["38"] = moveUp;
+        keyMap["87"] = moveUp;
+        // move left:
+        //      arrow left
+        //      key: a
+        keyMap["37"] = moveLeft;
+        keyMap["65"] = moveLeft;
+        // move right:
+        //      arrow right
+        //      key: d
+        keyMap["39"] = moveRight;
+        keyMap["68"] = moveRight;
+        return keyMap;
+    }
+
+    function moveDown() {
+        move('DOWN');
+    }
+    function moveUp() {
+        move('UP');
+    }
+    function moveLeft() {
+        move('LEFT');
+    }
+    function moveRight() {
+        move('RIGHT');
+    }
+
+    function move(direction) {
+        connection.send(JSON.stringify({
+            'type': 'CONTROL',
+            'direction': direction
+        }));
     }
 }

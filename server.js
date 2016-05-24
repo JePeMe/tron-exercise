@@ -91,9 +91,28 @@ function broadCastGamesList(){
 
 function startGame(game) {
     var clients = game.connections;
+    var listeners = [];
     var area = [];
     var players = [];
     var gameTimer;
+    var directions = {
+        "UP": {
+            x: 0,
+            y: -1
+        },
+        "DOWN": {
+            x: 0,
+            y: 1
+        },
+        "LEFT": {
+            x: -1,
+            y: 0
+        },
+        "RIGHT": {
+            x: 1,
+            y: 0
+        }
+    };
 
     start();
 
@@ -127,6 +146,19 @@ function startGame(game) {
                 score: 0
             };
         });
+
+        clients.forEach(function(client, index) {
+            var controlListener = client.on('message', function(message) {
+                console.log(message);
+                message = JSON.parse(message);
+
+                if (message.type === 'CONTROL') {
+                    players[index].dir = directions[message.direction];
+                }
+            });
+            listeners.push(controlListener);
+        });
+
         gameTimer = setInterval(tick, 500);
         clients.forEach(function(connection) {
             connection.send(JSON.stringify(
