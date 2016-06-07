@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon server.js"
+    "start": "forever -c nodemon server.js"
   },
   "repository": {
     "type": "git",
@@ -19,6 +19,7 @@
   "homepage": "https://github.com/JePeMe/tron-exercise#readme",
   "dependencies": {
     "express": "^4.13.4",
+    "forever": "^0.15.2",
     "nodemon": "^1.9.2",
     "ws": "^1.1.0"
   }
