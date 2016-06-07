@@ -84,6 +84,7 @@ function initGame(connection) {
         lobbyUpdate: function(){},
         lobbyPool: function(){},
         start: function(){},
+        error: handleError
     };
 
     connection.onmessage = function(msg) {
@@ -103,6 +104,11 @@ function initGame(connection) {
     };
     var playingField = $('#playingField');
     var ctx = playingField[0].getContext('2d');
+
+    function handleError(msg) {
+        game.hide();
+        initLobby(connection, msg.content);
+    }
 
     function updateGame(msg) {
         var area = msg.state.area;

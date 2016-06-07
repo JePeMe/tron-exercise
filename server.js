@@ -41,7 +41,7 @@ wss.on('connection', function(client) {
         }
         games[id] = {
             connections: [],
-            players: [],
+            players: []
         };
         joinGame(id);
         console.log(games);
@@ -50,6 +50,13 @@ wss.on('connection', function(client) {
 
     function joinGame(id){
         if(games.hasOwnProperty(id)){
+            if (games[id].running) {
+                client.send(JSON.stringify({
+                    type: 'error',
+                    content: 'game running'
+                }));
+                return;
+            }
             games[id].connections.push(client);
             var playerId = updatePlayers(id);
 
@@ -62,6 +69,10 @@ wss.on('connection', function(client) {
                     startGameIfReady(id);
                 }
             });
+            client.send(JSON.stringify({
+                type: 'ack',
+                content: 'joined lobby'
+            }));
         }
     }
 
@@ -150,6 +161,7 @@ function startGameIfReady(gameId) {
     console.log(games[gameId].players);
     if (allPlayersAreReady) {
         startGame(games[gameId]);
+        games[gameId].running = true;
     }
 }
 
@@ -216,10 +228,15 @@ function startGame(game) {
     function tick() {
         players.forEach(movePlayer);
         clients.forEach(function(connection) {
-            connection.send(JSON.stringify({
-                type: 'tick',
-                state: { players: players, area: area }
-            }));
+            try {
+                connection.send(JSON.stringify({
+                    type: 'tick',
+                    state: {players: players, area: area}
+                }));
+            } catch (error) {
+                console.log("Could not send tick to client");
+                console.log(error);
+            }
         });
     }
 
