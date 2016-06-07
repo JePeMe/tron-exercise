@@ -13,12 +13,27 @@ var MAX_SCORE = 10;
 var wss = new ws.Server({port: 1337});
 var games = {};
 
+var names = [
+    'Hildrun',
+    'Brunhilde',
+    'Gschukrasch',
+    'Malte'
+];
+
 wss.on('connection', function(client) {
     var router = {
         'create': createGame,
         'join': joinGame,
         'ready': startGameIfReady
     };
+
+    client.name = names.shift();
+    names.push(client.name);
+
+    client.send(JSON.stringify({
+        type: 'name',
+        message: client.name
+    }));
 
     client.on('message', function(message) {
         console.log(message);
@@ -228,7 +243,10 @@ function startGame(game) {
         clients.forEach(function(connection, index) {
             connection.send(JSON.stringify({
                 type: 'start',
-                message: index
+                message: {
+                    index: index,
+                    name: connection.name
+                }
             }));
         });
     }

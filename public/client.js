@@ -106,8 +106,8 @@ function initGame(connection) {
     var ctx = playingField[0].getContext('2d');
 
     function displayPlayerColor(message) {
-        console.log(message);
-        $('#playerColor').text(playerColors[message.message]);
+        $('#playerColor').text(message.message.name);
+        $('#playerColor').css('background-color', playerColors[message.message.index]);
     }
 
     function handleError(msg) {
