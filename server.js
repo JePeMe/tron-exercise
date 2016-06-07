@@ -233,7 +233,11 @@ function startGame(game) {
                 message = JSON.parse(message);
 
                 if (message.type === 'control') {
-                    players[index].dir = directions[message.direction];
+                    if( !(players[index].dir.x + directions[message.direction].x === 0 &&
+                        players[index].dir.y + directions[message.direction].y === 0))
+                    {
+                        players[index].dir = directions[message.direction];
+                    }
                 }
             });
             listeners.push(controlListener);
@@ -272,7 +276,13 @@ function startGame(game) {
         var otherPlayerId = area[player.position.x][player.position.y];
 
         if (otherPlayerId >= 0) {
-            var score = players[otherPlayerId].score++;
+            var score = players[otherPlayerId].score;
+            if(player.id !== otherPlayerId){
+                players[otherPlayerId].score++;
+            }
+            else{
+                players[otherPlayerId].score--;
+            }
             if(score >= MAX_SCORE){
                 gameOver(otherPlayerId);
             }
