@@ -83,7 +83,7 @@ function initGame(connection) {
         tick: updateGame,
         lobbyUpdate: function(){},
         lobbyPool: function(){},
-        start: function(){},
+        start: displayPlayerColor,
         error: handleError
     };
 
@@ -104,6 +104,11 @@ function initGame(connection) {
     };
     var playingField = $('#playingField');
     var ctx = playingField[0].getContext('2d');
+
+    function displayPlayerColor(message) {
+        console.log(message);
+        $('#playerColor').text(playerColors[message.message]);
+    }
 
     function handleError(msg) {
         game.hide();

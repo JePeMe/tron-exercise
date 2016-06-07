@@ -225,10 +225,11 @@ function startGame(game) {
         });
 
         gameTimer = setInterval(tick, 500);
-        clients.forEach(function(connection) {
-            connection.send(JSON.stringify(
-                {type: 'start'}
-            ));
+        clients.forEach(function(connection, index) {
+            connection.send(JSON.stringify({
+                type: 'start',
+                message: index
+            }));
         });
     }
 
