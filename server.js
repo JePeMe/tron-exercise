@@ -52,13 +52,14 @@ wss.on('connection', function(client) {
 
     function joinGame(id){
         if(games.hasOwnProperty(id)){
-            if (games[id].running) {
+            if (games[id].running || games[id].players.length >= 4) {
                 client.send(JSON.stringify({
                     type: 'error',
                     content: 'game running'
                 }));
                 return;
             }
+            client.ready = false;
             games[id].connections.push(client);
             var playerId = updatePlayers(id);
 
@@ -67,7 +68,7 @@ wss.on('connection', function(client) {
                 message = JSON.parse(message);
 
                 if (message.type === 'ready') {
-                    games[id].players[playerId].ready = true;
+                    client.ready = true;
                     startGameIfReady(id);
                 }
             });
@@ -129,8 +130,7 @@ function updatePlayers(gameId) {
                 id: index,
                 position: {x: 2, y: 24},
                 dir: {x: 1, y: 0},
-                score: 0,
-                ready: false
+                score: 0
             };
         }
         if (index === 1) {
@@ -138,8 +138,7 @@ function updatePlayers(gameId) {
                 id: index,
                 position: {x: 24, y: 2},
                 dir: {x: 0, y: 1},
-                score: 0,
-                ready: false
+                score: 0
             };
         }
         if (index === 2) {
@@ -147,16 +146,14 @@ function updatePlayers(gameId) {
                 id: index,
                 position: {x: 24, y: 47},
                 dir: {x: 0, y: -1},
-                score: 0,
-                ready: false
+                score: 0
             };
         }
         return {
             id: index,
             position: {x: 47, y: 24},
             dir: {x: -1, y: 0},
-            score: 0,
-            ready: false
+            score: 0
         };
     });
     return games[gameId].players.length-1;
@@ -164,11 +161,10 @@ function updatePlayers(gameId) {
 
 function startGameIfReady(gameId) {
 
-    var allPlayersAreReady = games[gameId].players.every(function(player) {
+    var allPlayersAreReady = games[gameId].connections.every(function(player) {
         return player.ready;
     });
-    console.log(games[gameId].players);
-    if (allPlayersAreReady) {
+    if (allPlayersAreReady && games[gameId].connections.length > 1) {
         startGame(games[gameId]);
         games[gameId].running = true;
         broadCastGamesList();
