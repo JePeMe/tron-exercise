@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/JePeMe/tron-exercise#readme",
   "dependencies": {
+    "express": "^4.13.4",
     "nodemon": "^1.9.2",
     "ws": "^1.1.0"
   }

@@ -1,10 +1,11 @@
-var http = require('http');
+var express = require('express');
 var ws = require('ws');
+var app = express();
 
-http.createServer(function() {
-    //do stuff, ideally serve html
-}).listen(1338, function() {
-    console.log('listening on 1338');
+app.use(express.static('public'));
+
+app.listen(1338, function () {
+  console.log('Tron server listening on port 1338!');
 });
 
 var MAX_SCORE = 10;
