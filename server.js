@@ -40,8 +40,10 @@ wss.on('connection', function(client) {
             return;
         }
         games[id] = {
+            id: id,
             connections: [],
-            players: []
+            players: [],
+            running: false
         };
         joinGame(id);
         console.log(games);
@@ -103,8 +105,15 @@ function removeGame(gameId, client) {
     delete games[gameId];
 }
 
-function sendGamesList(client){
-    client.send(JSON.stringify({type: 'lobbyPool', content: Object.keys(games)}));
+function sendGamesList(client) {
+    var gameList = [];
+    for (var game in games) {
+        if (!games[game].running) {
+            gameList.push(game);
+        }
+    }
+    console.log(gameList);
+    client.send(JSON.stringify({type: 'lobbyPool', content: gameList}));
 }
 
 function broadCastGamesList(){
@@ -162,6 +171,7 @@ function startGameIfReady(gameId) {
     if (allPlayersAreReady) {
         startGame(games[gameId]);
         games[gameId].running = true;
+        broadCastGamesList();
     }
 }
 
