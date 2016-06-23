@@ -27,6 +27,7 @@ function initLobby(connection, winner) {
             id: 'thebestgameofalltimesever',
             type: 'ready'
         }));
+        $('#button-ready').hide();
     });
 
     //TODO show info about who lost last game
