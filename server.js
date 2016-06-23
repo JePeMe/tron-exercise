@@ -20,6 +20,24 @@ var names = [
     'Malte'
 ];
 
+var startPositions =
+  [
+      {
+          position: {x: 2, y: 24},
+          dir: {x: 1, y: 0}
+      },
+      {
+          position: {x: 24, y: 2},
+          dir: {x: 0, y: 1},
+      }, {
+          position: {x: 24, y: 47},
+          dir: {x: 0, y: -1}
+      }, {
+          position: {x: 47, y: 24},
+          dir: {x: -1, y: 0}
+      }
+  ];
+
 wss.on('connection', function(client) {
     var router = {
         'create': createGame,
@@ -141,34 +159,11 @@ function broadCastGamesList(){
 
 function updatePlayers(gameId) {
     games[gameId].players = games[gameId].connections.map(function(client, index) {
-        if (index === 0) {
-            return {
-                id: index,
-                position: {x: 2, y: 24},
-                dir: {x: 1, y: 0},
-                score: 0
-            };
-        }
-        if (index === 1) {
-            return {
-                id: index,
-                position: {x: 24, y: 2},
-                dir: {x: 0, y: 1},
-                score: 0
-            };
-        }
-        if (index === 2) {
-            return {
-                id: index,
-                position: {x: 24, y: 47},
-                dir: {x: 0, y: -1},
-                score: 0
-            };
-        }
+        var start = startPositions[index];
         return {
             id: index,
-            position: {x: 47, y: 24},
-            dir: {x: -1, y: 0},
+            position: start.position,
+            dir: start.dir,
             score: 0
         };
     });
