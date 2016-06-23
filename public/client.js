@@ -73,9 +73,13 @@ function initLobby(connection, winner) {
 
 function initGame(connection) {
     var game = $('#game');
+    var countDownTimer = null;
+    var currentCountDown = -1;
+
     game.show();
 
     var log = $('#log');
+    $('#countDownFrame').hide();
 
     var keyMap = initKeyMap();
 
@@ -84,7 +88,7 @@ function initGame(connection) {
         tick: updateGame,
         playerJoined: playerJoined,
         lobbyPool: function(){},
-        start: displayPlayerColor,
+        start: startCountDown,
         error: handleError
     };
 
@@ -113,14 +117,35 @@ function initGame(connection) {
         $players.empty();
         players.forEach(function(player, index) {
            $players.append(
-               $('<span class="player-name" style="color: '+playerColors[index]+'">' + player.name + '</span>')
+               $('<div class="player-name" style="color: '+playerColors[index]+'">' + player.name + '</div>')
            );
         });
     }
 
-    function displayPlayerColor(message) {
-        $('#playerColor').text(message.message.name);
-        $('#playerColor').css('background-color', playerColors[message.message.index]);
+    function displayPlayerColor(req) {
+        $('#playerColor').text(req.message.name);
+        $('#playerColor').css('background-color', playerColors[req.message.index]);
+    }
+
+    function updateCountDown() {
+        if(currentCountDown > 0) {
+            currentCountDown--;
+            $('#countDown').text(currentCountDown);
+        }
+        else {
+            clearInterval(countDownTimer);
+            //hide count down label
+            $('#countDownFrame').hide();
+        }
+    }
+
+    function startCountDown(req) {
+        currentCountDown = parseInt(( req.message.timeStamp - Date.now() ) / 1000);
+        countDownTimer = setInterval(updateCountDown, 1000);
+        $('#countDown').text(currentCountDown);
+        $('#countDownFrame').show();
+
+        displayPlayerColor(req);
     }
 
     function handleError(msg) {

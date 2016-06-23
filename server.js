@@ -9,6 +9,7 @@ app.listen(1338, function () {
 });
 
 var MAX_SCORE = 10;
+var TIMEOUT = 5000; //in ms
 
 var wss = new ws.Server({port: 1337});
 var games = {};
@@ -247,20 +248,29 @@ function startGame(game) {
             listeners.push(controlListener);
         });
 
-        gameTimer = setInterval(tick, 500);
+        //send timestamp to client so he can display the count down
+        var timeStamp = Date.now() + TIMEOUT;
+
+        //send initial map to client
         clients.forEach(function(connection, index) {
             connection.send(JSON.stringify({
                 type: 'start',
                 message: {
                     index: index,
-                    name: connection.name
+                    name: connection.name,
+                    timeStamp: timeStamp
                 }
             }));
         });
+        sendMapUpdateToPlayers();
+
+        //start count down before game starts
+        countDownTimer = setTimeout(function() {
+            gameTimer = setInterval(tick, 500);
+        }, TIMEOUT);
     }
 
-    function tick() {
-        players.forEach(movePlayer);
+    function sendMapUpdateToPlayers() {
         clients.forEach(function(connection) {
             try {
                 connection.send(JSON.stringify({
@@ -272,6 +282,11 @@ function startGame(game) {
                 console.log(error);
             }
         });
+    }
+
+    function tick() {
+        players.forEach(movePlayer);
+        sendMapUpdateToPlayers();
     }
 
     function movePlayer(player, index) {

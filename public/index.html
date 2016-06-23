@@ -8,8 +8,13 @@
     <div id="game" style="display: none;">
         <div id="statistics" class="statistics"></div>
         <div id="playerColor"></div>
-        <canvas id="playingField" width=500 height=500></canvas>
-        <div id="playerList"></div>
+        <div class="game-filed-container">
+            <div id="countDownFrame" class="count-down-frame">
+                <div id="countDown" class="count-down">5</div>
+            </div>
+            <canvas id="playingField" class="playing-field" width=500 height=500></canvas>
+        </div>
+        <div id="playerList" class="player-list"></div>
         <a id="button-ready" href="javascript:;" class="btn">Ready</a>
         <div id="log"></div>
     </div>

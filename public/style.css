@@ -1,10 +1,30 @@
-#playingField {
+.playing-field {
     border-style: solid;
     border-width: 1px;
     border-color: black;
 }
 
-#playerList {
+.player-list {
     display: inline-block;
     vertical-align: top;
+}
+
+.count-down-frame {
+    display: flex;
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    justify-content: center;
+    align-items: center;
+    background-color: gray;
+    opacity: 0.5;
+}
+
+.count-down {
+    font-size: 80px;
+}
+
+.game-filed-container {
+    position: relative;
+    display: inline-block;
 }
