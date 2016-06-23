@@ -3,3 +3,8 @@
     border-width: 1px;
     border-color: black;
 }
+
+#playerList {
+    display: inline-block;
+    vertical-align: top;
+}

@@ -82,7 +82,7 @@ function initGame(connection) {
     var router = {
         gameover: gameOver,
         tick: updateGame,
-        lobbyUpdate: function(){},
+        playerJoined: playerJoined,
         lobbyPool: function(){},
         start: displayPlayerColor,
         error: handleError
@@ -103,8 +103,20 @@ function initGame(connection) {
         2: 'blue',
         3: 'black'
     };
+    var players = [];
     var playingField = $('#playingField');
     var ctx = playingField[0].getContext('2d');
+
+    function playerJoined(message) {
+        players = message.content;
+        var $players = $('#playerList');
+        $players.empty();
+        players.forEach(function(player, index) {
+           $players.append(
+               $('<span class="player-name" style="color: '+playerColors[index]+'">' + player.name + '</span>')
+           );
+        });
+    }
 
     function displayPlayerColor(message) {
         $('#playerColor').text(message.message.name);

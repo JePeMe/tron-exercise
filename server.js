@@ -110,6 +110,8 @@ wss.on('connection', function(client) {
                 type: 'ack',
                 content: 'joined lobby'
             }));
+
+            broadCastCurrentPlayers(games[id]);
         }
     }
 
@@ -157,6 +159,12 @@ function broadCastGamesList(){
     });
 }
 
+function broadCastCurrentPlayers(game){
+    game.connections.forEach(function each(client) {
+        client.send(JSON.stringify({type: 'playerJoined', content: game.players}));
+    });
+}
+
 function updatePlayers(gameId) {
     games[gameId].players = games[gameId].connections.map(function(client, index) {
         var start = startPositions[index];
@@ -164,7 +172,8 @@ function updatePlayers(gameId) {
             id: index,
             position: start.position,
             dir: start.dir,
-            score: 0
+            score: 0,
+            name: client.name
         };
     });
     return games[gameId].players.length-1;
